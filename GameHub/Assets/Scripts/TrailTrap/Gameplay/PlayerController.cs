@@ -33,6 +33,10 @@ namespace TrailTrap
                 : new MouseAimTurnInput(Camera.main);
         }
 
+        /// <summary>Override the input device. Tests inject a stub; later the M4 server and the
+        /// mobile joystick swap it too. Call after the component exists (Awake set a default).</summary>
+        public void SetTurnInput(ITurnInput source) => _turnSource = source;
+
         // Gather input every frame. NOT simulation — we only record intent here.
         // Writing the same field every frame is robust: the tick can never "miss" input.
         void Update()

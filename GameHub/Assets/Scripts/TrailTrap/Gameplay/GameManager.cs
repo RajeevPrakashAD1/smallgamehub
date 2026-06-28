@@ -15,6 +15,9 @@ namespace TrailTrap
         public TrailSystem Trails { get; private set; }   // gameplay truth; renderer/collision read it
         readonly MatchState _match = new();                // phase / countdown / winner (§5)
 
+        public Phase MatchPhase => _match.phase;           // read-only views (HUD, tests, later netcode)
+        public int   Winner     => _match.winner;
+
         [Header("Tick")]
         [Tooltip("Fixed simulation rate in Hz. 25 Hz = a 0.04s tick (our locked default).")]
         [SerializeField] float tickRateHz = 25f;
@@ -22,6 +25,16 @@ namespace TrailTrap
         [Header("Spawn")]
         [Tooltip("How far left/right of center the two players start.")]
         [SerializeField] float spawnX = 6f;
+
+        // Test/host seam: wire dependencies directly instead of via the Inspector. Call right
+        // after AddComponent (before Start runs) so Start spawns with these values.
+        public void Configure(SimConfig cfg, PlayerController player1, PlayerController player2, float spawnDistance)
+        {
+            config = cfg;
+            p1 = player1;
+            p2 = player2;
+            spawnX = spawnDistance;
+        }
 
         void Start()
         {
