@@ -18,6 +18,12 @@ namespace TrailTrap
                  "converted to radians in code).")]
         public float turnRateDeg = 180f;
 
+        [Tooltip("Top forward speed the ramp climbs to (world units/sec). Starts at baseSpeed.")]
+        public float maxSpeed = 9f;
+
+        [Tooltip("Seconds of play over which speed ramps from baseSpeed up to maxSpeed, then holds.")]
+        public float speedRampDuration = 60f;
+
         [Header("Trail")]
         [Tooltip("How long a freshly-laid point lives, early in the match (seconds).")]
         public float fadeStart = 4f;

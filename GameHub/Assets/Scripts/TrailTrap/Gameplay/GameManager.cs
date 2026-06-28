@@ -14,9 +14,15 @@ namespace TrailTrap
 
         public TrailSystem Trails { get; private set; }   // gameplay truth; renderer/collision read it
         readonly MatchState _match = new();                // phase / countdown / winner (§5)
+        float _playElapsed;                                // seconds spent Playing; drives speed ramp
 
         public Phase MatchPhase => _match.phase;           // read-only views (HUD, tests, later netcode)
         public int   Winner     => _match.winner;
+        public float Countdown  => _match.countdown;       // seconds left (audio reads this for beeps)
+
+        // Fired the tick a player crashes. Pure-view listeners (screen shake, crash SFX) subscribe;
+        // the sim stays ignorant of them. Sim event in FixedUpdate -> view reacts in Update/LateUpdate.
+        public event System.Action OnCrash;
 
         [Header("Tick")]
         [Tooltip("Fixed simulation rate in Hz. 25 Hz = a 0.04s tick (our locked default).")]
@@ -46,6 +52,7 @@ namespace TrailTrap
             p2.Spawn(new Vector2( spawnX, 0f), Mathf.PI, config);
 
             _match.StartMatch(config);          // begin in Countdown
+            _playElapsed = 0f;
         }
 
         void Update()
@@ -67,6 +74,11 @@ namespace TrailTrap
                 case Phase.Playing:   break;
             }
 
+            // Speed ramp (M2 juice): both players share one rising speed. MovementStep just
+            // reads State.speed, so the pure math stays untouched — we only set the field here.
+            p1.State.speed = p2.State.speed = SpeedAt(_playElapsed, config);
+            _playElapsed += dt;
+
             // Fixed order: move -> trail -> fade -> collide -> resolve win.
             p1.Tick(dt, config);                // 1. move          (§2)
             p2.Tick(dt, config);
@@ -83,6 +95,7 @@ namespace TrailTrap
             p2.Respawn(config);
             Trails.Clear();
             _match.StartMatch(config);
+            _playElapsed = 0f;
         }
 
         // Temporary dev HUD (M2 replaces with real UI). Shows the match phase so we can see §5 work.
@@ -100,6 +113,12 @@ namespace TrailTrap
             if (msg != "")
                 GUI.Label(new Rect(20, 20, 600, 60), msg);
         }
+
+        // Forward speed ramps baseSpeed -> maxSpeed over speedRampDuration, then holds. Mirrors the
+        // trail fade ramp (§3.4): the late game gets faster AND more crowded — rising tension.
+        static float SpeedAt(float elapsed, SimConfig cfg)
+            => Mathf.Lerp(cfg.baseSpeed, cfg.maxSpeed,
+                          Mathf.Clamp01(elapsed / cfg.speedRampDuration));
 
         // §4: a head crashes if it's within the stripe of any LIVE segment, or leaves the arena.
         void CollisionStep(float dt)
@@ -119,6 +138,7 @@ namespace TrailTrap
 
             if (d1) p1.State.alive = false;
             if (d2) p2.State.alive = false;
+            if (d1 || d2) OnCrash?.Invoke();   // someone died this tick -> notify view juice
 
             bool HitsTrail(PlayerController pl, System.Collections.Generic.IReadOnlyList<TrailPoint> t, int skipNewest)
             {
