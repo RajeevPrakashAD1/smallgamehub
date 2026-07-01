@@ -55,13 +55,6 @@ namespace TrailTrap
             _playElapsed = 0f;
         }
 
-        void Update()
-        {
-            // Dev rematch trigger; M2 replaces with a winner-screen button/tap (§5.4).
-            if (_match.phase == Phase.Over && Input.GetKeyDown(KeyCode.R))
-                Rematch();
-        }
-
         void FixedUpdate()
         {
             float dt = Time.fixedDeltaTime;     // the fixed tick step — never Time.deltaTime here
@@ -96,22 +89,6 @@ namespace TrailTrap
             Trails.Clear();
             _match.StartMatch(config);
             _playElapsed = 0f;
-        }
-
-        // Temporary dev HUD (M2 replaces with real UI). Shows the match phase so we can see §5 work.
-        void OnGUI()
-        {
-            GUI.skin.label.fontSize = 28;
-            string msg = _match.phase switch
-            {
-                Phase.Countdown => Mathf.CeilToInt(_match.countdown).ToString(),
-                Phase.Playing   => "",
-                Phase.Over      => (_match.winner == 0 ? "DRAW" : $"P{_match.winner} WINS")
-                                   + "   —   press R to rematch",
-                _ => "",
-            };
-            if (msg != "")
-                GUI.Label(new Rect(20, 20, 600, 60), msg);
         }
 
         // Forward speed ramps baseSpeed -> maxSpeed over speedRampDuration, then holds. Mirrors the
