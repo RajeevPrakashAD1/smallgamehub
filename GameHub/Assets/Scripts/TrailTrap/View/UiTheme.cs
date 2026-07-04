@@ -20,6 +20,9 @@ namespace TrailTrap
         [Header("Power-ups")]
         public Color boost = new(0.4f, 1f, 0.6f);
 
+        [Header("Arena")]
+        [ColorUsage(true, true)] public Color wall = new(1.2f, 1.2f, 1.6f);  // HDR: soft blue-white glow
+
         static UiTheme _instance;
 
         // Loaded once from Assets/Resources/UiTheme.asset; falls back to code defaults if missing.

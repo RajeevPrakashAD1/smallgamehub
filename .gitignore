@@ -43,3 +43,7 @@ ehthumbs.db
 
 # ---- Claude local config ----
 .claude/
+
+# ---- AI assistant config (local only) ----
+CLAUDE.md
+.claude/

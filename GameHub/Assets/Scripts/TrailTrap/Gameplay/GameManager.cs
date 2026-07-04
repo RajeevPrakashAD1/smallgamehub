@@ -33,6 +33,10 @@ namespace TrailTrap
         [Tooltip("How far left/right of center the two players start.")]
         [SerializeField] float spawnX = 6f;
 
+        [Header("Practice (dev)")]
+        [Tooltip("Solo mode: no opponent, and crashing respawns you instead of ending the match.")]
+        [SerializeField] bool practiceMode;
+
         // Test/host seam: wire dependencies directly instead of via the Inspector. Call right
         // after AddComponent (before Start runs) so Start spawns with these values.
         public void Configure(SimConfig cfg, PlayerController player1, PlayerController player2, float spawnDistance)
@@ -49,9 +53,14 @@ namespace TrailTrap
             Trails = new TrailSystem();
             PowerUps = new PowerUpSystem();
 
-            // §2.4: P1 starts left facing +X (heading 0), P2 right facing -X (heading π).
-            p1.Spawn(new Vector2(-spawnX, 0f), 0f, config);
-            p2.Spawn(new Vector2( spawnX, 0f), Mathf.PI, config);
+            // Both face "up" (+Y) so they run parallel — spawning them toward each other made
+            // every round a head-on crash. Practice mode centers P1 and drops the opponent.
+            const float faceUp = Mathf.PI / 2f;
+            p1.Spawn(practiceMode ? Vector2.zero : new Vector2(-spawnX, 0f), faceUp, config);
+            if (practiceMode)
+                p2.gameObject.SetActive(false);          // no opponent to dodge while testing
+            else
+                p2.Spawn(new Vector2(spawnX, 0f), faceUp, config);
 
             _match.StartMatch(config);          // begin in Countdown
             _playElapsed = 0f;
@@ -86,7 +95,14 @@ namespace TrailTrap
             Trails.Fade(dt, config);                 // 3. fade old      (§3)
             PowerUps.Collect(p1, p2, config);        // 4. grab pickups  (§7) — before collide
             CollisionStep(dt);                       // 5. who crashed   (§4)
-            _match.Step(p1, p2);                     // 6. resolve win   (§5)
+            if (practiceMode)
+            {
+                if (!p1.State.alive) RespawnPractice(); // never end — pop back and keep testing
+            }
+            else
+            {
+                _match.Step(p1, p2);                 // 6. resolve win   (§5)
+            }
             PowerUps.SpawnTick(dt, config, Trails);  // 7. maybe spawn   (§7)
         }
 
@@ -99,6 +115,14 @@ namespace TrailTrap
             PowerUps.Clear();
             _match.StartMatch(config);
             _playElapsed = 0f;
+        }
+
+        // Practice: a crash just puts P1 back at spawn with a clean board, still in Playing.
+        void RespawnPractice()
+        {
+            p1.Respawn(config);
+            Trails.Clear();          // wipe the loop you just crashed into so you don't re-die
+            _playElapsed = 0f;       // reset the speed ramp for a fresh run
         }
 
         // Forward speed ramps baseSpeed -> maxSpeed over speedRampDuration, then holds. Mirrors the
