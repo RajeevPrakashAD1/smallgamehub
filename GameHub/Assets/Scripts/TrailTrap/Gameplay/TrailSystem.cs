@@ -24,6 +24,9 @@ namespace TrailTrap
         public IReadOnlyList<TrailPoint> P1Trail => _t1;
         public IReadOnlyList<TrailPoint> P2Trail => _t2;
 
+        // Read-only sim clock — consumers decide "dead" by point.deathAt <= Elapsed.
+        public float Elapsed => _elapsed;
+
         // Wipe both trails and reset match time (rematch, §5.4).
         public void Clear()
         {
@@ -55,6 +58,27 @@ namespace TrailTrap
                 int i = 0;
                 while (i < t.Count && t[i].deathAt <= _elapsed) i++;
                 if (i > 0) t.RemoveRange(0, i);
+            }
+        }
+
+        // Eraser (§7): kill every point within radius, in BOTH trails, instantly. Points stay
+        // in the lists (front-only removal is the sorted-list invariant) but stop counting —
+        // collision and the view must skip dead points from now on.
+        public void EraseAround(Vector2 center, float radius)
+        {
+            float rSq = radius * radius;
+            Mark(_t1);
+            Mark(_t2);
+
+            void Mark(List<TrailPoint> t)
+            {
+                for (int i = 0; i < t.Count; i++)
+                    if (t[i].deathAt > _elapsed && (t[i].pos - center).sqrMagnitude <= rSq)
+                    {
+                        var p = t[i];
+                        p.deathAt = _elapsed;   // "you expired just now" — dead by the normal rule
+                        t[i] = p;
+                    }
             }
         }
 

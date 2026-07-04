@@ -93,7 +93,7 @@ namespace TrailTrap
             p2.Tick(dt, config);
             Trails.Append(p1, p2, dt, config);       // 2. lay trail pts (§3)
             Trails.Fade(dt, config);                 // 3. fade old      (§3)
-            PowerUps.Collect(p1, p2, config);        // 4. grab pickups  (§7) — before collide
+            PowerUps.Collect(p1, p2, config, Trails); // 4. grab pickups  (§7) — before collide
             CollisionStep(dt);                       // 5. who crashed   (§4)
             if (practiceMode)
             {
@@ -154,10 +154,16 @@ namespace TrailTrap
             bool HitsTrail(PlayerController pl, System.Collections.Generic.IReadOnlyList<TrailPoint> t, int skipNewest)
             {
                 if (!pl.State.alive) return false;
+                if (pl.Effects.PhaseActive) return false;   // Phase (§7): pass through trails
                 Vector2 head = pl.State.position;
+                float now = Trails.Elapsed;
                 int last = t.Count - 1 - skipNewest;          // segment i = points[i]..points[i+1]
                 for (int i = 0; i < last; i++)
+                {
+                    // Erased (§7.5): a segment with a dead endpoint doesn't exist anymore.
+                    if (t[i].deathAt <= now || t[i + 1].deathAt <= now) continue;
                     if (CollisionMath.DistSqToSegment(head, t[i].pos, t[i + 1].pos) <= rSq) return true;
+                }
                 return false;
             }
 

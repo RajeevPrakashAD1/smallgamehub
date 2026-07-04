@@ -59,6 +59,8 @@ namespace TrailTrap
         static Color ColorFor(PowerUpType type) => type switch
         {
             PowerUpType.Boost => UiTheme.Instance.boost,
+            PowerUpType.Phase => UiTheme.Instance.phase,
+            PowerUpType.Eraser => UiTheme.Instance.eraser,
             _ => Color.white,
         };
 

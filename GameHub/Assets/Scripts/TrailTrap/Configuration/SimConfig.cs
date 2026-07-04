@@ -58,6 +58,12 @@ namespace TrailTrap
         [Tooltip("How long a Boost lasts once grabbed (seconds).")]
         public float boostDur = 3f;
 
+        [Tooltip("How long Phase lasts once grabbed — pass through trails, walls still kill (seconds).")]
+        public float phaseDur = 2f;
+
+        [Tooltip("Eraser: trail points within this radius of the collector die instantly (world units).")]
+        public float eraserRadius = 2.5f;
+
         [Tooltip("How close a head must get to a pickup to collect it (world units).")]
         public float pickupRadius = 0.4f;
 

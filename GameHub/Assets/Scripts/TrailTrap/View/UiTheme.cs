@@ -19,6 +19,11 @@ namespace TrailTrap
 
         [Header("Power-ups")]
         public Color boost = new(0.4f, 1f, 0.6f);
+        public Color phase = new(1f, 0.85f, 0.3f);   // amber — reads as "ghost/pass" vs boost green
+        public Color eraser = new(1f, 0.35f, 0.35f); // red — "destroys stuff"
+
+        [Header("Trails")]
+        public Color erased = new(0.5f, 0.5f, 0.5f, 0.25f);  // dead trail runs: dim ghost, no HDR/bloom
 
         [Header("Arena")]
         [ColorUsage(true, true)] public Color wall = new(1.2f, 1.2f, 1.6f);  // HDR: soft blue-white glow

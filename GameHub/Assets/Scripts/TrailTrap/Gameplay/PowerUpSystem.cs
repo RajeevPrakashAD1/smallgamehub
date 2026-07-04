@@ -23,13 +23,14 @@ namespace TrailTrap
         }
 
         // Tick step 4 (before collision): a head touching a pickup collects it this tick.
-        public void Collect(PlayerController p1, PlayerController p2, SimConfig cfg)
+        // Trails passed in because Eraser mutates them (an instant effect, not a timer).
+        public void Collect(PlayerController p1, PlayerController p2, SimConfig cfg, TrailSystem trails)
         {
-            CollectFor(p1, cfg);
-            CollectFor(p2, cfg);
+            CollectFor(p1, cfg, trails);
+            CollectFor(p2, cfg, trails);
         }
 
-        void CollectFor(PlayerController pl, SimConfig cfg)
+        void CollectFor(PlayerController pl, SimConfig cfg, TrailSystem trails)
         {
             if (!pl.State.alive) return;
             float rSq = cfg.pickupRadius * cfg.pickupRadius;
@@ -38,16 +39,18 @@ namespace TrailTrap
             for (int i = _board.Count - 1; i >= 0; i--)
                 if ((head - _board[i].pos).sqrMagnitude <= rSq)
                 {
-                    Apply(pl, _board[i].type, cfg);
+                    Apply(pl, _board[i].type, cfg, trails);
                     _board.RemoveAt(i);
                 }
         }
 
-        static void Apply(PlayerController pl, PowerUpType type, SimConfig cfg)
+        static void Apply(PlayerController pl, PowerUpType type, SimConfig cfg, TrailSystem trails)
         {
             switch (type)
             {
-                case PowerUpType.Boost: pl.Effects.boost = cfg.boostDur; break;
+                case PowerUpType.Boost:  pl.Effects.boost = cfg.boostDur; break;
+                case PowerUpType.Phase:  pl.Effects.phase = cfg.phaseDur; break;
+                case PowerUpType.Eraser: trails.EraseAround(pl.State.position, cfg.eraserRadius); break;
             }
         }
 
@@ -64,7 +67,8 @@ namespace TrailTrap
                 _board.Add(new PowerUp { pos = pos, type = RandomType() });
         }
 
-        static PowerUpType RandomType() => PowerUpType.Boost;   // one type in v1
+        static PowerUpType RandomType()
+            => (PowerUpType)Random.Range(0, 3);   // uniform over Boost/Phase/Eraser
 
         // A few random darts inside the arena; take the first that isn't sitting on a live trail.
         // Keeps pickups out in the open (GDD §4.1). Gives up after a few tries — try again next spawn.
