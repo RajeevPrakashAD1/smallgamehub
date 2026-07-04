@@ -12,11 +12,6 @@ namespace TrailTrap
     /// </summary>
     public sealed class HudController : MonoBehaviour
     {
-        // Neon palette echoing the trails so the winner banner reads as "the cyan/magenta player".
-        static readonly Color P1Cyan    = new(0f, 1f, 1f);
-        static readonly Color P2Magenta = new(1f, 0f, 1f);
-        static readonly Color DrawGrey   = new(0.8f, 0.8f, 0.8f);
-
         GameManager _game;    // the sim we observe (found at Awake, never mutated)
         Text   _big;          // countdown number, "GO!", and the winner headline all reuse this
         Button _rematch;      // shown only when the match is Over
@@ -50,19 +45,20 @@ namespace TrailTrap
             {
                 case Phase.Countdown:
                     // Ceil so the last fractional second still reads "1", not "0".
-                    SetBig(Mathf.CeilToInt(_game.Countdown).ToString(), Color.white);
+                    SetBig(Mathf.CeilToInt(_game.Countdown).ToString(), UiTheme.Instance.countdown);
                     _rematch.gameObject.SetActive(false);
                     break;
 
                 case Phase.Playing:
-                    SetBig(_goFlashLeft > 0f ? "GO!" : "", P1Cyan);   // flash, then clear
+                    SetBig(_goFlashLeft > 0f ? "GO!" : "", UiTheme.Instance.p1);   // flash, then clear
                     _rematch.gameObject.SetActive(false);
                     break;
 
                 case Phase.Over:
                     int w = _game.Winner;                            // 0 draw, 1 = p1, 2 = p2
                     SetBig(w == 0 ? "DRAW" : $"P{w} WINS",
-                           w == 0 ? DrawGrey : (w == 1 ? P1Cyan : P2Magenta));
+                           w == 0 ? UiTheme.Instance.draw
+                                  : (w == 1 ? UiTheme.Instance.p1 : UiTheme.Instance.p2));
                     _rematch.gameObject.SetActive(true);
                     break;
             }

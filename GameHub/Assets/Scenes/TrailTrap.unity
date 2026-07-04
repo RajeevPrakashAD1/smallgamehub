@@ -139,24 +139,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &519420055
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 519420028}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9841ff2903b94d61b5c42d2c37691e2d, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
-  game: {fileID: 769385308}
-  maxOffset: 0.6
-  maxRoll: 3
-  decayPerSec: 1.6
-  crashTrauma: 0.7
-  frequency: 22
 --- !u!81 &519420029
 AudioListener:
   m_ObjectHideFlags: 0
@@ -275,6 +257,24 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &519420055
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 519420028}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9841ff2903b94d61b5c42d2c37691e2d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  game: {fileID: 769385308}
+  maxOffset: 0.6
+  maxRoll: 3
+  decayPerSec: 1.6
+  crashTrauma: 0.7
+  frequency: 22
 --- !u!1 &619394800
 GameObject:
   m_ObjectHideFlags: 0
@@ -582,6 +582,8 @@ MonoBehaviour:
   game: {fileID: 769385308}
   line1: {fileID: 927857385}
   line2: {fileID: 1713336591}
+  color1: {r: 0, g: 1, b: 1, a: 1}
+  color2: {r: 1, g: 0, b: 1, a: 1}
 --- !u!4 &1422436563
 Transform:
   m_ObjectHideFlags: 0
@@ -627,7 +629,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 80dda59c47f7ec749baff3055162dbdb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TrailTrap.PlayerController
-  scheme: 0
+  scheme: 1
   leftKey: 276
   rightKey: 275
 --- !u!212 &1524926845
@@ -995,9 +997,56 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0364963635044a3a8de5f0b9aee1ee28, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   goFlashSeconds: 0.6
+--- !u!1 &1900000010
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1900000011}
+  - component: {fileID: 1900000012}
+  m_Layer: 0
+  m_Name: PowerUpView
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1900000011
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1900000010}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1900000012
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1900000010}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5e36b317806047b282df6692c571ba98, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  diameter: 0.8
+  pulse: 0.12
+  pulseSpeed: 3
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
@@ -1011,3 +1060,4 @@ SceneRoots:
   - {fileID: 1713336592}
   - {fileID: 1422436563}
   - {fileID: 1900000001}
+  - {fileID: 1900000011}

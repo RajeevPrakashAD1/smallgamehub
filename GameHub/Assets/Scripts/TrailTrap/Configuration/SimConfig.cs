@@ -50,5 +50,22 @@ namespace TrailTrap
         [Header("Match")]
         [Tooltip("Length of the '3..2..1..GO' countdown before the duel starts (seconds).")]
         public float countdownSeconds = 3f;
+
+        [Header("Power-ups")]
+        [Tooltip("Speed multiplier while Boost is active.")]
+        public float boostMul = 2f;
+
+        [Tooltip("How long a Boost lasts once grabbed (seconds).")]
+        public float boostDur = 3f;
+
+        [Tooltip("How close a head must get to a pickup to collect it (world units).")]
+        public float pickupRadius = 0.4f;
+
+        [Tooltip("Min/max seconds between pickup spawns.")]
+        public float spawnMin = 6f;
+        public float spawnMax = 10f;
+
+        [Tooltip("Most pickups allowed on the board at once.")]
+        public int maxPickups = 2;
     }
 }

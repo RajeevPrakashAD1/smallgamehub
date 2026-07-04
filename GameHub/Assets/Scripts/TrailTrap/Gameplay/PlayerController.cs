@@ -12,6 +12,7 @@ namespace TrailTrap
     public sealed class PlayerController : MonoBehaviour
     {
         public PlayerState State;        // gameplay truth for this player
+        public ActiveEffects Effects;    // timed power-up effects (Boost...); read by the tick
 
         public enum TurnScheme { MouseAim, Keyboard }   // dev pickers; mobile joystick comes later
 
@@ -62,6 +63,7 @@ namespace TrailTrap
                 speed    = cfg.baseSpeed,
                 alive    = true,
             };
+            Effects = default;   // clear any lingering boost on (re)spawn
             ApplyToTransform();
         }
 

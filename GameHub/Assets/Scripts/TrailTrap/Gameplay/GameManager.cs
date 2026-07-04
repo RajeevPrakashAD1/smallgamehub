@@ -13,6 +13,7 @@ namespace TrailTrap
         [SerializeField] PlayerController p1, p2;
 
         public TrailSystem Trails { get; private set; }   // gameplay truth; renderer/collision read it
+        public PowerUpSystem PowerUps { get; private set; } // pickups on the board (§7); view reads it
         readonly MatchState _match = new();                // phase / countdown / winner (§5)
         float _playElapsed;                                // seconds spent Playing; drives speed ramp
 
@@ -46,6 +47,7 @@ namespace TrailTrap
         {
             Time.fixedDeltaTime = 1f / tickRateHz;   // make FixedUpdate run at our sim rate
             Trails = new TrailSystem();
+            PowerUps = new PowerUpSystem();
 
             // §2.4: P1 starts left facing +X (heading 0), P2 right facing -X (heading π).
             p1.Spawn(new Vector2(-spawnX, 0f), 0f, config);
@@ -67,18 +69,25 @@ namespace TrailTrap
                 case Phase.Playing:   break;
             }
 
-            // Speed ramp (M2 juice): both players share one rising speed. MovementStep just
-            // reads State.speed, so the pure math stays untouched — we only set the field here.
-            p1.State.speed = p2.State.speed = SpeedAt(_playElapsed, config);
+            // Drain effect timers first, so a Boost that expires this tick stops boosting now.
+            p1.Effects.Tick(dt);
+            p2.Effects.Tick(dt);
+
+            // Speed ramp (M2) times the Boost multiplier (M3). MovementStep just reads State.speed.
+            float rampSpeed = SpeedAt(_playElapsed, config);
+            p1.State.speed = rampSpeed * (p1.Effects.BoostActive ? config.boostMul : 1f);
+            p2.State.speed = rampSpeed * (p2.Effects.BoostActive ? config.boostMul : 1f);
             _playElapsed += dt;
 
-            // Fixed order: move -> trail -> fade -> collide -> resolve win.
-            p1.Tick(dt, config);                // 1. move          (§2)
+            // Fixed order: move -> trail -> fade -> collect -> collide -> resolve -> spawn.
+            p1.Tick(dt, config);                     // 1. move          (§2)
             p2.Tick(dt, config);
-            Trails.Append(p1, p2, dt, config);  // 2. lay trail pts (§3)
-            Trails.Fade(dt, config);            // 3. fade old      (§3)
-            CollisionStep(dt);                  // 4. who crashed   (§4)
-            _match.Step(p1, p2);                // 5. resolve win   (§5)
+            Trails.Append(p1, p2, dt, config);       // 2. lay trail pts (§3)
+            Trails.Fade(dt, config);                 // 3. fade old      (§3)
+            PowerUps.Collect(p1, p2, config);        // 4. grab pickups  (§7) — before collide
+            CollisionStep(dt);                       // 5. who crashed   (§4)
+            _match.Step(p1, p2);                     // 6. resolve win   (§5)
+            PowerUps.SpawnTick(dt, config, Trails);  // 7. maybe spawn   (§7)
         }
 
         // Instant rematch: reset players + trails and re-enter Countdown — no scene reload (§5.4).
@@ -87,6 +96,7 @@ namespace TrailTrap
             p1.Respawn(config);
             p2.Respawn(config);
             Trails.Clear();
+            PowerUps.Clear();
             _match.StartMatch(config);
             _playElapsed = 0f;
         }
