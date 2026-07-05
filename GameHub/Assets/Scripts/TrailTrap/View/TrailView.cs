@@ -4,36 +4,40 @@ using UnityEngine;
 namespace TrailTrap
 {
     /// <summary>
-    /// Pure VIEW: every frame it copies each player's trail-point list into a LineRenderer so
-    /// we can see it. It owns no gameplay data — the TrailSystem (truth) does. Mirrors §2's
-    /// "State is truth, transform is the picture" (§3.3).
+    /// Pure VIEW: mirrors each player's trail-point list into LineRenderers. One renderer can
+    /// only show ONE gradient, so the list is split into contiguous RUNS of same state
+    /// (live / erased-dead), one pooled renderer per run (§7 Eraser view).
     /// </summary>
     public sealed class TrailView : MonoBehaviour
     {
         [SerializeField] GameManager game;
-        [SerializeField] LineRenderer line1, line2;   // one ribbon per player
+        [SerializeField] LineRenderer line1, line2;   // authored renderers = pool slot 0 + clone template
 
-        // HDR colors: values can exceed 1, which is what lets Bloom (next step) make them glow.
         [Header("Trail colors (HDR — enables glow with Bloom)")]
         [ColorUsage(true, true)] [SerializeField] Color color1 = Color.cyan;
         [ColorUsage(true, true)] [SerializeField] Color color2 = Color.magenta;
 
+        // Prebuilt once — Gradient is a class; building per frame would allocate garbage.
+        Gradient _live1, _live2, _dead;
+        readonly List<LineRenderer> _pool1 = new(), _pool2 = new();
+
         void Start()
         {
-            // The gradient runs tail(0) -> head(1): transparent at the old tail, solid at the head.
-            line1.colorGradient = FadeGradient(color1);
-            line2.colorGradient = FadeGradient(color2);
+            _live1 = FadeGradient(color1);
+            _live2 = FadeGradient(color2);
+            _dead  = FlatGradient(UiTheme.Instance.erased);   // dim ghost: visible "broken wall", no bloom
+            _pool1.Add(line1);
+            _pool2.Add(line2);
         }
 
-        // LateUpdate: draw after the sim/visuals have moved this frame.
         void LateUpdate()
         {
-            if (game.Trails == null) return;   // sim not started yet (before GameManager.Start)
-            Draw(line1, game.Trails.P1Trail);
-            Draw(line2, game.Trails.P2Trail);
+            if (game.Trails == null) return;
+            Draw(_pool1, line1, game.Trails.P1Trail, _live1);
+            Draw(_pool2, line2, game.Trails.P2Trail, _live2);
         }
 
-        // Same hue along the whole line; alpha ramps 0 -> 1 so the tail melts into the background.
+        // Tail(0) -> head(1): transparent tail melting into the background.
         static Gradient FadeGradient(Color c)
         {
             var g = new Gradient();
@@ -43,11 +47,49 @@ namespace TrailTrap
             return g;
         }
 
-        static void Draw(LineRenderer lr, IReadOnlyList<TrailPoint> pts)
+        static Gradient FlatGradient(Color c)
         {
-            lr.positionCount = pts.Count;                 // match the ribbon length to live points
-            for (int i = 0; i < pts.Count; i++)
-                lr.SetPosition(i, pts[i].pos);            // Vector2 -> Vector3 (z = 0)
+            var g = new Gradient();
+            g.SetKeys(
+                new[] { new GradientColorKey(c, 0f), new GradientColorKey(c, 1f) },
+                new[] { new GradientAlphaKey(c.a, 0f), new GradientAlphaKey(c.a, 1f) });
+            return g;
+        }
+
+        void Draw(List<LineRenderer> pool, LineRenderer template, IReadOnlyList<TrailPoint> pts, Gradient live)
+        {
+            float now = game.Trails.Elapsed;
+            int used = 0, runStart = 0;
+
+            while (runStart < pts.Count)
+            {
+                // Grow the run while points share the first point's state (dead = deathAt passed).
+                bool dead = pts[runStart].deathAt <= now;
+                int runEnd = runStart + 1;
+                while (runEnd < pts.Count && (pts[runEnd].deathAt <= now) == dead) runEnd++;
+
+                var lr = Rent(pool, template, used++);
+                lr.colorGradient = dead ? _dead : live;
+                int n = runEnd - runStart;
+                lr.positionCount = n;
+                for (int i = 0; i < n; i++)
+                    lr.SetPosition(i, pts[runStart + i].pos);
+
+                runStart = runEnd;
+            }
+
+            // Hide leftovers from frames that had more runs; never destroy (pooling).
+            for (int i = used; i < pool.Count; i++)
+                if (pool[i].gameObject.activeSelf) pool[i].gameObject.SetActive(false);
+        }
+
+        static LineRenderer Rent(List<LineRenderer> pool, LineRenderer template, int index)
+        {
+            if (index == pool.Count)
+                pool.Add(Instantiate(template, template.transform.parent));   // inherits material/width/sorting
+            var lr = pool[index];
+            if (!lr.gameObject.activeSelf) lr.gameObject.SetActive(true);
+            return lr;
         }
     }
 }
