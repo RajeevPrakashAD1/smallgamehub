@@ -37,6 +37,10 @@ namespace TrailTrap
         [Tooltip("Solo mode: no opponent, and crashing respawns you instead of ending the match.")]
         [SerializeField] bool practiceMode;
 
+        [Header("Network (dev)")]
+        [Tooltip("Start hosting immediately on play. M5 replaces this with a Host/Join menu.")]
+        [SerializeField] bool autoHost = true;
+
         // Test/host seam: wire dependencies directly instead of via the Inspector. Call right
         // after AddComponent (before Start runs) so Start spawns with these values.
         public void Configure(SimConfig cfg, PlayerController player1, PlayerController player2, float spawnDistance)
@@ -64,10 +68,17 @@ namespace TrailTrap
 
             _match.StartMatch(config);          // begin in Countdown
             _playElapsed = 0f;
+
+            if (autoHost) NetKit.Session.StartHost();   // dev: every play is a host (M4)
         }
 
         void FixedUpdate()
         {
+            // Server authority (§8): in a session only the server sims; clients get state
+            // streamed to them. Offline (no session) falls through — practice mode, tests.
+            if (NetKit.Session.IsRunning && !NetKit.Session.IsServer)
+                return;   // M5 adds the client-side visual trail steps here
+
             float dt = Time.fixedDeltaTime;     // the fixed tick step — never Time.deltaTime here
 
             // Dispatch on phase: countdown advances even though the sim is paused (§5.3).
@@ -89,8 +100,8 @@ namespace TrailTrap
             _playElapsed += dt;
 
             // Fixed order: move -> trail -> fade -> collect -> collide -> resolve -> spawn.
-            p1.Tick(dt, config);                     // 1. move          (§2)
-            p2.Tick(dt, config);
+            p1.ServerTick(dt, config);               // 1. move          (§2)
+            p2.ServerTick(dt, config);
             Trails.Append(p1, p2, dt, config);       // 2. lay trail pts (§3)
             Trails.Fade(dt, config);                 // 3. fade old      (§3)
             PowerUps.Collect(p1, p2, config, Trails); // 4. grab pickups  (§7) — before collide

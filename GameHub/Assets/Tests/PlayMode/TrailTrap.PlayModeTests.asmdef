@@ -3,6 +3,7 @@
     "rootNamespace": "TrailTrap.Tests",
     "references": [
         "TrailTrap",
+        "Unity.Netcode.Runtime",
         "UnityEngine.TestRunner"
     ],
     "includePlatforms": [],

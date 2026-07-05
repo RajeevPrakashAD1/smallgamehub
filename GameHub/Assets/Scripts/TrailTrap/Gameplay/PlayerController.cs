@@ -1,17 +1,17 @@
+using Unity.Netcode;
 using UnityEngine;
 
 namespace TrailTrap
 {
     /// <summary>
-    /// Drives one player. Two jobs, kept apart on purpose:
-    ///  - <see cref="MovementStep"/> is the *pure* sim math (no Unity globals) — reused
-    ///    unchanged by the server at M4 and easy to unit-test.
-    ///  - <see cref="Tick"/> is the glue: run the math, then show the result on the transform.
-    /// Input gathering comes in Step 3b; for now <c>_input</c> stays straight (turn = 0).
+    /// Drives one player. Now a NetworkBehaviour (LLD §8.3): the OWNER reads its input device
+    /// and ships a quantized turn to the server; the SERVER runs the same pure MovementStep and
+    /// NetworkTransform streams the result out. With no session running it short-circuits the
+    /// RPC and behaves exactly like the local M1 version (practice mode, tests).
     /// </summary>
-    public sealed class PlayerController : MonoBehaviour
+    public sealed class PlayerController : NetworkBehaviour
     {
-        public PlayerState State;        // gameplay truth for this player
+        public PlayerState State;        // gameplay truth for this player (server-owned in a session)
         public ActiveEffects Effects;    // timed power-up effects (Boost...); read by the tick
 
         public enum TurnScheme { MouseAim, Keyboard, Joystick }
@@ -23,7 +23,7 @@ namespace TrailTrap
         [SerializeField] FloatingJoystick joystick;             // used only by Joystick scheme
 
         ITurnInput _turnSource;          // the chosen device, behind one interface
-        InputFrame _input;               // "mailbox": Update() writes, Tick() reads
+        sbyte _serverTurn;               // latest turn the server holds for us, quantized [-127,127]
 
         Vector2 _spawnPos;               // remembered so a rematch can reset us (§5.4)
         float   _spawnHeading;
@@ -38,16 +38,25 @@ namespace TrailTrap
             };
         }
 
-        /// <summary>Override the input device. Tests inject a stub; later the M4 server and the
-        /// mobile joystick swap it too. Call after the component exists (Awake set a default).</summary>
+        /// <summary>Override the input device (tests inject a stub; M5 swaps per-owner).</summary>
         public void SetTurnInput(ITurnInput source) => _turnSource = source;
 
-        // Gather input every frame. NOT simulation — we only record intent here.
-        // Writing the same field every frame is robust: the tick can never "miss" input.
+        // Gather input every frame — but only where this player's human sits (the owner).
         void Update()
         {
-            _input = new InputFrame { turn = _turnSource.Read(in State) };
+            if (IsSpawned && !IsOwner) return;   // remote copy: the RPC feeds _serverTurn instead
+
+            sbyte turn = Quantize(_turnSource.Read(in State));
+            if (IsSpawned) SubmitTurnRpc(turn);  // owner -> server (runs locally, instantly, on host)
+            else _serverTurn = turn;             // offline: no session, keep M1 behavior
         }
+
+        [Rpc(SendTo.Server)]
+        void SubmitTurnRpc(sbyte turn) => _serverTurn = turn;
+
+        // One byte on the wire instead of four; 1/127 steps are far below the sim's noise floor.
+        static sbyte Quantize(float turn)
+            => (sbyte)Mathf.RoundToInt(Mathf.Clamp(turn, -1f, 1f) * 127f);
 
         /// <summary>Place the player at a spawn pose, remember it, and bring it to life.</summary>
         public void Spawn(Vector2 position, float headingRad, SimConfig cfg)
@@ -67,14 +76,14 @@ namespace TrailTrap
                 speed    = cfg.baseSpeed,
                 alive    = true,
             };
-            Effects = default;   // clear any lingering boost on (re)spawn
+            Effects = default;
             ApplyToTransform();
         }
 
-        /// <summary>Advance one fixed tick. Called from GameManager.FixedUpdate (Step 3c).</summary>
-        public void Tick(float dt, SimConfig cfg)
+        /// <summary>Advance one fixed tick. Server-only in a session (GameManager guards).</summary>
+        public void ServerTick(float dt, SimConfig cfg)
         {
-            State = MovementStep(State, _input, dt, cfg);
+            State = MovementStep(State, new InputFrame { turn = _serverTurn / 127f }, dt, cfg);
             ApplyToTransform();
         }
 
@@ -86,7 +95,7 @@ namespace TrailTrap
         {
             if (!p.alive) return p;
 
-            float turnRate = cfg.turnRateDeg * Mathf.Deg2Rad;            // degrees authored, radians used
+            float turnRate = cfg.turnRateDeg * Mathf.Deg2Rad;
             p.heading = Mathf.Repeat(p.heading + inp.turn * turnRate * dt, Mathf.PI * 2f);
 
             Vector2 fwd = new Vector2(Mathf.Cos(p.heading), Mathf.Sin(p.heading));
@@ -94,7 +103,8 @@ namespace TrailTrap
             return p;
         }
 
-        // Push the current state onto the visible transform (Z untouched: 2D).
+        // Push the current state onto the visible transform. In a session the server's
+        // NetworkTransform streams this to clients; the pure math never touches it.
         void ApplyToTransform()
         {
             transform.position = State.position;

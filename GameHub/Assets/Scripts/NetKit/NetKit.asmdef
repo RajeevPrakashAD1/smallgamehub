@@ -1,9 +1,8 @@
 {
-    "name": "TrailTrap",
-    "rootNamespace": "TrailTrap",
+    "name": "NetKit",
+    "rootNamespace": "NetKit",
     "references": [
-        "Unity.Netcode.Runtime",
-        "NetKit"
+        "Unity.Netcode.Runtime"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
