@@ -31,6 +31,22 @@ namespace TrailTrap
         }
     }
 
+    /// <summary>Mobile joystick: steer toward the direction the thumb is pulling.</summary>
+    public sealed class JoystickTurnInput : ITurnInput
+    {
+        readonly FloatingJoystick _joy;
+        readonly float _band;   // smoothing band in radians
+
+        public JoystickTurnInput(FloatingJoystick joy, float smoothBandDeg = 15f)
+        {
+            _joy = joy;
+            _band = smoothBandDeg * Mathf.Deg2Rad;
+        }
+
+        public float Read(in PlayerState p)
+            => SteerMath.TurnToward(p.heading, _joy.Direction, _band);
+    }
+
     /// <summary>Relative hold-left/right keys. Dev fallback only (mobile is the real target).</summary>
     public sealed class KeyboardTurnInput : ITurnInput
     {

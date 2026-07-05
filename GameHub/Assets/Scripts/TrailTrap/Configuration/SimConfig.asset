@@ -14,3 +14,21 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TrailTrap.SimConfig
   baseSpeed: 5
   turnRateDeg: 180
+  maxSpeed: 9
+  speedRampDuration: 60
+  fadeStart: 4
+  fadeEnd: 9
+  fadeRampDuration: 90
+  trailWidth: 0.2
+  grace: 0.1
+  selfImmuneSeconds: 0.3
+  arenaHalfSize: {x: 17, y: 10}
+  countdownSeconds: 3
+  boostMul: 2
+  boostDur: 3
+  phaseDur: 2
+  eraserRadius: 2.5
+  pickupRadius: 0.4
+  spawnMin: 6
+  spawnMax: 10
+  maxPickups: 2

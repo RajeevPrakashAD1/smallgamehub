@@ -14,12 +14,13 @@ namespace TrailTrap
         public PlayerState State;        // gameplay truth for this player
         public ActiveEffects Effects;    // timed power-up effects (Boost...); read by the tick
 
-        public enum TurnScheme { MouseAim, Keyboard }   // dev pickers; mobile joystick comes later
+        public enum TurnScheme { MouseAim, Keyboard, Joystick }
 
-        [Header("Input (dev)")]
+        [Header("Input")]
         [SerializeField] TurnScheme scheme = TurnScheme.MouseAim;
-        [SerializeField] KeyCode leftKey  = KeyCode.A;   // used only by Keyboard scheme
+        [SerializeField] KeyCode leftKey  = KeyCode.A;          // used only by Keyboard scheme
         [SerializeField] KeyCode rightKey = KeyCode.D;
+        [SerializeField] FloatingJoystick joystick;             // used only by Joystick scheme
 
         ITurnInput _turnSource;          // the chosen device, behind one interface
         InputFrame _input;               // "mailbox": Update() writes, Tick() reads
@@ -29,9 +30,12 @@ namespace TrailTrap
 
         void Awake()
         {
-            _turnSource = scheme == TurnScheme.Keyboard
-                ? new KeyboardTurnInput(leftKey, rightKey)
-                : new MouseAimTurnInput(Camera.main);
+            _turnSource = scheme switch
+            {
+                TurnScheme.Keyboard => new KeyboardTurnInput(leftKey, rightKey),
+                TurnScheme.Joystick => new JoystickTurnInput(joystick),
+                _                   => new MouseAimTurnInput(Camera.main),
+            };
         }
 
         /// <summary>Override the input device. Tests inject a stub; later the M4 server and the
