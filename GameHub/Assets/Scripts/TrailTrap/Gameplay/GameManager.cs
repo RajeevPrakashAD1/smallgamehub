@@ -24,6 +24,9 @@ namespace TrailTrap
         // Fired the tick a player crashes. Pure-view listeners (screen shake, crash SFX) subscribe;
         // the sim stays ignorant of them. Sim event in FixedUpdate -> view reacts in Update/LateUpdate.
         public event System.Action OnCrash;
+        // Fired when the board resets (rematch). NetMatchSync relays it to clients (M5),
+        // whose derived trails would otherwise draw a teleport streak across the arena.
+        public event System.Action OnBoardReset;
 
         [Header("Tick")]
         [Tooltip("Fixed simulation rate in Hz. 25 Hz = a 0.04s tick (our locked default).")]
@@ -36,10 +39,6 @@ namespace TrailTrap
         [Header("Practice (dev)")]
         [Tooltip("Solo mode: no opponent, and crashing respawns you instead of ending the match.")]
         [SerializeField] bool practiceMode;
-
-        [Header("Network (dev)")]
-        [Tooltip("Start hosting immediately on play. M5 replaces this with a Host/Join menu.")]
-        [SerializeField] bool autoHost = true;
 
         // Test/host seam: wire dependencies directly instead of via the Inspector. Call right
         // after AddComponent (before Start runs) so Start spawns with these values.
@@ -68,16 +67,17 @@ namespace TrailTrap
 
             _match.StartMatch(config);          // begin in Countdown
             _playElapsed = 0f;
-
-            if (autoHost) NetKit.Session.StartHost();   // dev: every play is a host (M4)
         }
 
         void FixedUpdate()
         {
-            // Server authority (§8): in a session only the server sims; clients get state
-            // streamed to them. Offline (no session) falls through — practice mode, tests.
+            // Server authority (§8): in a session only the server sims; clients rebuild
+            // the view from streamed state. Offline (no session) falls through — practice, tests.
             if (NetKit.Session.IsRunning && !NetKit.Session.IsServer)
-                return;   // M5 adds the client-side visual trail steps here
+            {
+                ClientViewTick(Time.fixedDeltaTime);
+                return;
+            }
 
             float dt = Time.fixedDeltaTime;     // the fixed tick step — never Time.deltaTime here
 
@@ -126,6 +126,28 @@ namespace TrailTrap
             PowerUps.Clear();
             _match.StartMatch(config);
             _playElapsed = 0f;
+            OnBoardReset?.Invoke();
+        }
+
+        // Client-side appliers (M5): NetMatchSync pushes server facts into the local view state.
+        public void ClientApplyMatch(Phase phase, float countdown, int winner)
+        {
+            _match.phase = phase;
+            _match.countdown = countdown;
+            _match.winner = winner;
+        }
+
+        public void ClientResetBoard() => Trails.Clear();
+        public void ClientNotifyCrash() => OnCrash?.Invoke();
+
+        // Client-side view feed (M5): grow trails locally from the positions NetworkTransform
+        // streams into the transforms. Cosmetic only — collision reads the server's lists.
+        void ClientViewTick(float dt)
+        {
+            p1.State.position = p1.transform.position;
+            p2.State.position = p2.transform.position;
+            Trails.Append(p1, p2, dt, config);
+            Trails.Fade(dt, config);
         }
 
         // Practice: a crash just puts P1 back at spawn with a clean board, still in Playing.
