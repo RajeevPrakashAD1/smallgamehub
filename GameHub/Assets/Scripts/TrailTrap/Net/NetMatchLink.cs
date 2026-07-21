@@ -38,6 +38,7 @@ namespace TrailTrap
         {
             if (!NetKit.Session.IsServer) return;
             if (p2.OwnerClientId != clientId) return;
+            if (!p2.NetworkObject.IsSpawned) return;               // session teardown already despawned it
             p2.NetworkObject.RemoveOwnership();                    // P2 back to the host
         }
     }

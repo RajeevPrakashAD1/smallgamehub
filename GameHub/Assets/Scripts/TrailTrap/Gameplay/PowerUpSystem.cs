@@ -15,11 +15,20 @@ namespace TrailTrap
 
         public IReadOnlyList<PowerUp> Board => _board;
 
+        // Bumped on every board mutation. NetMatchSync compares it to the last version it
+        // pushed, so the pickup NetworkList is rewritten only when something changed.
+        public int Version { get; private set; }
+
+        // Fired when an Eraser pickup triggers (blast position + radius). The net layer
+        // relays it to clients so their locally-derived trails show the erase too.
+        public event System.Action<Vector2, float> Erased;
+
         // Rematch: clear the board and re-arm the spawn timer.
         public void Clear()
         {
             _board.Clear();
             _nextIn = 0f;
+            Version++;
         }
 
         // Tick step 4 (before collision): a head touching a pickup collects it this tick.
@@ -41,16 +50,20 @@ namespace TrailTrap
                 {
                     Apply(pl, _board[i].type, cfg, trails);
                     _board.RemoveAt(i);
+                    Version++;
                 }
         }
 
-        static void Apply(PlayerController pl, PowerUpType type, SimConfig cfg, TrailSystem trails)
+        void Apply(PlayerController pl, PowerUpType type, SimConfig cfg, TrailSystem trails)
         {
             switch (type)
             {
                 case PowerUpType.Boost:  pl.Effects.boost = cfg.boostDur; break;
                 case PowerUpType.Phase:  pl.Effects.phase = cfg.phaseDur; break;
-                case PowerUpType.Eraser: trails.EraseAround(pl.State.position, cfg.eraserRadius); break;
+                case PowerUpType.Eraser:
+                    trails.EraseAround(pl.State.position, cfg.eraserRadius);
+                    Erased?.Invoke(pl.State.position, cfg.eraserRadius);
+                    break;
             }
         }
 
@@ -64,7 +77,18 @@ namespace TrailTrap
             _nextIn = Random.Range(cfg.spawnMin, cfg.spawnMax);
 
             if (TryFindOpenSpot(cfg, trails, out Vector2 pos))
+            {
                 _board.Add(new PowerUp { pos = pos, type = RandomType() });
+                Version++;
+            }
+        }
+
+        // Client mirror (M5): overwrite the local board with what the server's NetworkList
+        // says. The view keeps reading Board, unaware the data is remote.
+        public void ClientSetBoard(IReadOnlyList<PowerUp> items)
+        {
+            _board.Clear();
+            for (int i = 0; i < items.Count; i++) _board.Add(items[i]);
         }
 
         static PowerUpType RandomType()

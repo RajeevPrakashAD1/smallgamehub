@@ -139,6 +139,7 @@ namespace TrailTrap
 
         public void ClientResetBoard() => Trails.Clear();
         public void ClientNotifyCrash() => OnCrash?.Invoke();
+        public void ClientEraseAt(Vector2 pos, float radius) => Trails.EraseAround(pos, radius);
 
         // Client-side view feed (M5): grow trails locally from the positions NetworkTransform
         // streams into the transforms. Cosmetic only — collision reads the server's lists.
@@ -179,6 +180,9 @@ namespace TrailTrap
             bool d2 = HitsTrail(p2, Trails.P2Trail, immune)
                     | HitsTrail(p2, Trails.P1Trail, 0)
                     | OutOfBounds(p2);
+
+            // Dev cheat: detect as normal but never apply death (no fake shakes either).
+            if (DevFlags.NoDeath) return;
 
             if (d1) p1.State.alive = false;
             if (d2) p2.State.alive = false;
