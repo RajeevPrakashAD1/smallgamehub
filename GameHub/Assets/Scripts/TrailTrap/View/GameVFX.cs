@@ -23,7 +23,7 @@ namespace TrailTrap
 
         void Awake()
         {
-            var dot = MakeDotTexture(32);
+            var dot = ProcSprites.MakeDotTexture(32);
             _burst = MakeSystem("Burst", dot, life: 0.6f, speed: 6f, size: 0.35f, edgeOnly: false);
             _ring  = MakeSystem("Ring",  dot, life: ringLife, speed: 3f, size: 0.22f, edgeOnly: true);
         }
@@ -110,20 +110,5 @@ namespace TrailTrap
             return ps;
         }
 
-        // Same soft-dot trick as PowerUpView, but as a raw texture (particles want materials).
-        static Texture2D MakeDotTexture(int sizePx)
-        {
-            var tex = new Texture2D(sizePx, sizePx, TextureFormat.RGBA32, false);
-            float rad = sizePx * 0.5f;
-            for (int y = 0; y < sizePx; y++)
-                for (int x = 0; x < sizePx; x++)
-                {
-                    float d = Vector2.Distance(new Vector2(x, y), new Vector2(rad, rad));
-                    float a = Mathf.Clamp01(1f - d / rad);
-                    tex.SetPixel(x, y, new Color(1f, 1f, 1f, a));
-                }
-            tex.Apply();
-            return tex;
-        }
     }
 }

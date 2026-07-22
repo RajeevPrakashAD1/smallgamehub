@@ -1167,6 +1167,7 @@ GameObject:
   - component: {fileID: 1950000021}
   - component: {fileID: 1950000022}
   - component: {fileID: 1524926844}
+  - component: {fileID: 1524926847}
   m_Layer: 0
   m_Name: Player2
   m_TagString: Untagged
@@ -1191,6 +1192,22 @@ MonoBehaviour:
   leftKey: 276
   rightKey: 275
   joystick: {fileID: 342059137}
+--- !u!114 &1524926847
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1524926843}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e548bb318e374321ac9381c03e046ad0, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::TrailTrap.PlayerHeadView
+  player: 2
+  glowMaterial: {fileID: 2100000, guid: 82f471727b0a4d59858c0a54d72fa392, type: 2}
+  diameter: 0.7
+  hdrBoost: 2.2
 --- !u!212 &1524926845
 SpriteRenderer:
   serializedVersion: 2
@@ -1420,6 +1437,7 @@ GameObject:
   - component: {fileID: 1950000011}
   - component: {fileID: 1950000012}
   - component: {fileID: 1779797461}
+  - component: {fileID: 1779797464}
   m_Layer: 0
   m_Name: Player1
   m_TagString: Untagged
@@ -1444,6 +1462,22 @@ MonoBehaviour:
   leftKey: 97
   rightKey: 100
   joystick: {fileID: 342059137}
+--- !u!114 &1779797464
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1779797460}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e548bb318e374321ac9381c03e046ad0, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::TrailTrap.PlayerHeadView
+  player: 1
+  glowMaterial: {fileID: 2100000, guid: 82f471727b0a4d59858c0a54d72fa392, type: 2}
+  diameter: 0.7
+  hdrBoost: 2.2
 --- !u!212 &1779797462
 SpriteRenderer:
   serializedVersion: 2

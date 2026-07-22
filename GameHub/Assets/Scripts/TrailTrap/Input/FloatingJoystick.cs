@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 namespace TrailTrap
 {
@@ -24,6 +25,8 @@ namespace TrailTrap
         void Awake()
         {
             _zone = (RectTransform)transform;
+            baseRing.GetComponent<Image>().sprite = ProcSprites.MakeRing(128);
+            knob.GetComponent<Image>().sprite = ProcSprites.MakeDot(128);
             baseRing.gameObject.SetActive(false);
         }
 
