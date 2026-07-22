@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
+using TMPro;
 
 namespace TrailTrap
 {
@@ -13,7 +14,8 @@ namespace TrailTrap
     public sealed class HudController : MonoBehaviour
     {
         GameManager _game;    // the sim we observe (found at Awake, never mutated)
-        Text   _big;          // countdown number, "GO!", and the winner headline all reuse this
+        TMP_Text _big;        // countdown number, "GO!", and the winner headline all reuse this
+        TMP_FontAsset _font;  // Orbitron SDF from Resources; null -> TMP's default font
         Button _rematch;      // shown only when the match is Over
         Phase  _prevPhase;    // last frame's phase, so we can detect Countdown -> Playing
         float  _goFlashLeft;  // seconds left to keep flashing "GO!" after the countdown ends
@@ -26,6 +28,7 @@ namespace TrailTrap
             // One GameManager in the scene; find it instead of a serialized ref (less to wire).
             // FindAny (not FindFirst): there's only one, so we don't need ordered results.
             _game = FindAnyObjectByType<GameManager>();
+            _font = Resources.Load<TMP_FontAsset>("Orbitron-SDF");
             BuildUi();
             _prevPhase = Phase.Countdown;
         }
@@ -108,25 +111,24 @@ namespace TrailTrap
             new GameObject("EventSystem", typeof(EventSystem), typeof(StandaloneInputModule));
         }
 
-        static Text MakeText(string name, Transform parent, int fontSize, Vector2 anchoredPos, Vector2 size)
+        TMP_Text MakeText(string name, Transform parent, float fontSize, Vector2 anchoredPos, Vector2 size)
         {
-            var go = new GameObject(name, typeof(Text));
+            var go = new GameObject(name, typeof(TextMeshProUGUI));
             go.transform.SetParent(parent, worldPositionStays: false);
 
-            var t = go.GetComponent<Text>();
-            // Unity 6 removed Arial.ttf as a builtin; LegacyRuntime.ttf is its replacement.
-            t.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            var t = go.GetComponent<TextMeshProUGUI>();
+            if (_font != null) t.font = _font;                    // Orbitron; else TMP default
             t.fontSize = fontSize;
-            t.alignment = TextAnchor.MiddleCenter;
-            t.horizontalOverflow = HorizontalWrapMode.Overflow;   // don't wrap the big number
-            t.verticalOverflow = VerticalWrapMode.Overflow;
+            t.alignment = TextAlignmentOptions.Center;
+            t.textWrappingMode = TextWrappingModes.NoWrap;        // don't wrap the big number
+            t.overflowMode = TextOverflowModes.Overflow;
             t.raycastTarget = false;                              // labels never eat clicks
 
             CenterRect(t.rectTransform, anchoredPos, size);
             return t;
         }
 
-        static Button MakeButton(string name, Transform parent, string label, Vector2 anchoredPos, Vector2 size)
+        Button MakeButton(string name, Transform parent, string label, Vector2 anchoredPos, Vector2 size)
         {
             // A button is an Image (its background/hit area) plus a Button behaviour, with a
             // Text child for the caption — the same three pieces the editor's "UI > Button" makes.

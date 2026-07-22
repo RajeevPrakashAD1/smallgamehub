@@ -3,7 +3,8 @@
     "rootNamespace": "TrailTrap",
     "references": [
         "Unity.Netcode.Runtime",
-        "NetKit"
+        "NetKit",
+        "Unity.TextMeshPro"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
