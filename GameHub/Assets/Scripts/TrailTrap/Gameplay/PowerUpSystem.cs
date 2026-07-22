@@ -23,6 +23,9 @@ namespace TrailTrap
         // relays it to clients so their locally-derived trails show the erase too.
         public event System.Action<Vector2, float> Erased;
 
+        // Fired for every collected pickup (where, what) — feeds audio/VFX; relayed to clients.
+        public event System.Action<Vector2, PowerUpType> Collected;
+
         // Rematch: clear the board and re-arm the spawn timer.
         public void Clear()
         {
@@ -65,6 +68,7 @@ namespace TrailTrap
                     Erased?.Invoke(pl.State.position, cfg.eraserRadius);
                     break;
             }
+            Collected?.Invoke(pl.State.position, type);
         }
 
         // Tick step 7 (end of tick): count down, then try to drop one pickup in open space.

@@ -27,6 +27,10 @@ namespace TrailTrap
         // Fired when the board resets (rematch). NetMatchSync relays it to clients (M5),
         // whose derived trails would otherwise draw a teleport streak across the arena.
         public event System.Action OnBoardReset;
+        // Pickup/erase facts for audio+VFX. One subscription works everywhere: the host
+        // raises them from the sim, clients from the relayed RPCs — same deal as OnCrash.
+        public event System.Action<Vector2, PowerUpType> OnCollected;
+        public event System.Action<Vector2, float> OnErased;
 
         [Header("Tick")]
         [Tooltip("Fixed simulation rate in Hz. 25 Hz = a 0.04s tick (our locked default).")]
@@ -55,6 +59,8 @@ namespace TrailTrap
             Time.fixedDeltaTime = 1f / tickRateHz;   // make FixedUpdate run at our sim rate
             Trails = new TrailSystem();
             PowerUps = new PowerUpSystem();
+            PowerUps.Collected += (pos, type) => OnCollected?.Invoke(pos, type);
+            PowerUps.Erased    += (pos, radius) => OnErased?.Invoke(pos, radius);
 
             // Both face "up" (+Y) so they run parallel — spawning them toward each other made
             // every round a head-on crash. Practice mode centers P1 and drops the opponent.
@@ -139,7 +145,13 @@ namespace TrailTrap
 
         public void ClientResetBoard() => Trails.Clear();
         public void ClientNotifyCrash() => OnCrash?.Invoke();
-        public void ClientEraseAt(Vector2 pos, float radius) => Trails.EraseAround(pos, radius);
+        public void ClientNotifyCollected(Vector2 pos, PowerUpType type) => OnCollected?.Invoke(pos, type);
+
+        public void ClientEraseAt(Vector2 pos, float radius)
+        {
+            Trails.EraseAround(pos, radius);
+            OnErased?.Invoke(pos, radius);
+        }
 
         // Client-side view feed (M5): grow trails locally from the positions NetworkTransform
         // streams into the transforms. Cosmetic only — collision reads the server's lists.
