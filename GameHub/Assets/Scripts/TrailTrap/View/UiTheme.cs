@@ -28,6 +28,10 @@ namespace TrailTrap
         [Header("Arena")]
         [ColorUsage(true, true)] public Color wall = new(1.2f, 1.2f, 1.6f);  // HDR: soft blue-white glow
 
+        [Header("Background")]
+        public Color bgBase = new(0.024f, 0.039f, 0.110f);  // #060A1C deep-space navy
+        public Color grid   = new(0.106f, 0.180f, 0.333f);  // #1B2E55 faint steel-blue lines
+
         static UiTheme _instance;
 
         // Loaded once from Assets/Resources/UiTheme.asset; falls back to code defaults if missing.
