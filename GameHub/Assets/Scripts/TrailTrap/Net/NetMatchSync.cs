@@ -48,6 +48,7 @@ namespace TrailTrap
             {
                 game.OnBoardReset += RelayReset;
                 game.OnCrash      += RelayCrash;
+                game.OnCrashAt    += RelayCrashAt;
                 game.PowerUps.Erased    += RelayErase;
                 game.PowerUps.Collected += RelayCollected;
             }
@@ -64,6 +65,7 @@ namespace TrailTrap
             {
                 game.OnBoardReset -= RelayReset;
                 game.OnCrash      -= RelayCrash;
+                game.OnCrashAt    -= RelayCrashAt;
                 game.PowerUps.Erased    -= RelayErase;
                 game.PowerUps.Collected -= RelayCollected;
             }
@@ -114,6 +116,7 @@ namespace TrailTrap
 
         void RelayReset() => ResetBoardRpc();
         void RelayCrash() => CrashRpc();
+        void RelayCrashAt(Vector2 pos) => CrashAtRpc(pos);
         void RelayErase(Vector2 pos, float radius) => EraseRpc(pos, radius);
         void RelayCollected(Vector2 pos, PowerUpType type) => CollectedRpc(pos, (byte)type);
 
@@ -122,6 +125,9 @@ namespace TrailTrap
 
         [Rpc(SendTo.NotServer)]
         void CrashRpc() => game.ClientNotifyCrash();
+
+        [Rpc(SendTo.NotServer)]
+        void CrashAtRpc(Vector2 pos) => game.ClientNotifyCrashAt(pos);
 
         [Rpc(SendTo.NotServer)]
         void EraseRpc(Vector2 pos, float radius) => game.ClientEraseAt(pos, radius);

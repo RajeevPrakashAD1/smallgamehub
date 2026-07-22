@@ -31,6 +31,9 @@ namespace TrailTrap
         // raises them from the sim, clients from the relayed RPCs — same deal as OnCrash.
         public event System.Action<Vector2, PowerUpType> OnCollected;
         public event System.Action<Vector2, float> OnErased;
+        // Crash WITH a location (one per dead player; a draw fires it twice). OnCrash
+        // stays for listeners that don't care where (shake, audio, background flash).
+        public event System.Action<Vector2> OnCrashAt;
 
         [Header("Tick")]
         [Tooltip("Fixed simulation rate in Hz. 25 Hz = a 0.04s tick (our locked default).")]
@@ -145,6 +148,7 @@ namespace TrailTrap
 
         public void ClientResetBoard() => Trails.Clear();
         public void ClientNotifyCrash() => OnCrash?.Invoke();
+        public void ClientNotifyCrashAt(Vector2 pos) => OnCrashAt?.Invoke(pos);
         public void ClientNotifyCollected(Vector2 pos, PowerUpType type) => OnCollected?.Invoke(pos, type);
 
         public void ClientEraseAt(Vector2 pos, float radius)
@@ -198,6 +202,8 @@ namespace TrailTrap
 
             if (d1) p1.State.alive = false;
             if (d2) p2.State.alive = false;
+            if (d1) OnCrashAt?.Invoke(p1.State.position);
+            if (d2) OnCrashAt?.Invoke(p2.State.position);
             if (d1 || d2) OnCrash?.Invoke();   // someone died this tick -> notify view juice
 
             bool HitsTrail(PlayerController pl, System.Collections.Generic.IReadOnlyList<TrailPoint> t, int skipNewest)

@@ -651,6 +651,7 @@ GameObject:
   - component: {fileID: 769385313}
   - component: {fileID: 769385314}
   - component: {fileID: 769385315}
+  - component: {fileID: 769385316}
   m_Layer: 0
   m_Name: GameManger
   m_TagString: Untagged
@@ -739,6 +740,23 @@ MonoBehaviour:
   draw: {fileID: 8300000, guid: 3d942540eafb4d33a7b3625fd78ebac7, type: 3}
   music: {fileID: 8300000, guid: 99566d586e6b19e43992f6929a0a1977, type: 3}
   musicVolume: 0.35
+--- !u!114 &769385316
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 769385307}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e57df908c6944a4b8924b99154d930cb, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::TrailTrap.GameVFX
+  game: {fileID: 769385308}
+  pickupCount: 14
+  crashCount: 48
+  ringCount: 60
+  ringLife: 0.45
 --- !u!114 &769385312
 MonoBehaviour:
   m_ObjectHideFlags: 0
