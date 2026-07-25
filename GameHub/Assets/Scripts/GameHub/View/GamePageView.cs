@@ -121,7 +121,7 @@ namespace GameHub
                     break;
 
                 case PageAction.Play:
-                    Debug.Log($"[Hub] PLAY '{m.id}' — Feature 5 launches the game here.");
+                    _hub.Launcher.Launch(m, GameMode.Solo);
                     break;
             }
         }

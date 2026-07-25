@@ -27,6 +27,7 @@ namespace GameHub
         public GameCatalogue Catalogue { get; private set; }
         public HubFlow Flow { get; private set; }
         public IContentService Content { get; private set; }
+        public GameLauncher Launcher { get; private set; }
 
         void Awake()
         {
@@ -51,6 +52,10 @@ namespace GameHub
 
         void Start()
         {
+            Launcher = GetComponent<GameLauncher>();
+            if (Launcher == null) Launcher = gameObject.AddComponent<GameLauncher>();
+            Launcher.Init(this);
+
             // Push dependencies into the views before any transition fires: Awake order
             // between components is undefined, Start-after-all-Awakes is not.
             foreach (var view in GetComponentsInChildren<IHubView>(includeInactive: true))

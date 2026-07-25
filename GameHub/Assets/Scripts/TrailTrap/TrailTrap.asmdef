@@ -4,6 +4,7 @@
     "references": [
         "Unity.Netcode.Runtime",
         "NetKit",
+        "GameHub",
         "Unity.TextMeshPro"
     ],
     "includePlatforms": [],
