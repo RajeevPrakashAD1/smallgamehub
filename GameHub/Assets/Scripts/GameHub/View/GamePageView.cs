@@ -1,4 +1,3 @@
-using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -6,8 +5,9 @@ using UnityEngine.UI;
 namespace GameHub
 {
     /// <summary>
-    /// The game page: one game's cover, tagline and actions. Unlike Home it is
-    /// parameterized — it re-reads HubFlow.CurrentGameId every time it opens.
+    /// The game page: one game's cover, tagline and actions. Parameterized — it re-reads
+    /// HubFlow.CurrentGameId on every show. All button/label decisions come from
+    /// GamePageController.Describe; this file only applies them.
     /// </summary>
     public sealed class GamePageView : MonoBehaviour, IHubView
     {
@@ -18,9 +18,17 @@ namespace GameHub
         Image _cover;
         TMP_Text _title;
         TMP_Text _tagline;
+        TMP_Text _status;
         Button _primary;
         TMP_Text _primaryLabel;
         Button _remove;
+        RectTransform _progressTrack;
+        RectTransform _progressFill;
+
+        PageAction _action;        // what the primary button does right now
+        bool _pollProgress;        // true only while a download is running
+
+        // ---- lifecycle ----------------------------------------------------------------
 
         public void Init(HubBootstrap hub)
         {
@@ -28,23 +36,34 @@ namespace GameHub
             BuildUi();
 
             _hub.Flow.StateChanged += OnStateChanged;
+            _hub.Content.Changed += OnContentChanged;
             OnStateChanged(_hub.Flow.State);
         }
 
         void OnDestroy()
         {
-            if (_hub != null) _hub.Flow.StateChanged -= OnStateChanged;
+            if (_hub == null) return;
+            _hub.Flow.StateChanged -= OnStateChanged;
+            _hub.Content.Changed -= OnContentChanged;
         }
+
+        void Update()
+        {
+            // Progress moves every frame; state transitions arrive via OnContentChanged.
+            if (_pollProgress) Apply();
+        }
+
+        // ---- reacting -----------------------------------------------------------------
 
         void OnStateChanged(HubState state)
         {
             bool show = state == HubState.GamePage;
             _canvas.gameObject.SetActive(show);
-            if (show) Render(_hub.Catalogue.ById(_hub.Flow.CurrentGameId));
-        }
+            _pollProgress = false;
 
-        void Render(HubGameManifest m)
-        {
+            if (!show) return;
+
+            var m = _hub.Catalogue.ById(_hub.Flow.CurrentGameId);
             if (m == null)
             {
                 Debug.LogWarning($"GamePageView: no game with id '{_hub.Flow.CurrentGameId}'.");
@@ -59,19 +78,61 @@ namespace GameHub
                 ? Color.white
                 : new Color(0.10f, 0.14f, 0.26f, 1f);
 
-            // Feature 4 replaces this with real download state.
-            SetPrimary(m.supportsSolo || m.supportsMultiplayer ? "PLAY" : "COMING SOON", null);
-            _remove.gameObject.SetActive(false);
+            _hub.Content.Refresh(m);   // async size query; resolves through Changed
+            Apply();
         }
 
-        /// <summary>Feature 4 drives the primary button through here (PLAY / DOWNLOAD / …).</summary>
-        public void SetPrimary(string label, Action onClick)
+        void OnContentChanged(string id)
         {
-            _primaryLabel.text = label;
-            _primary.onClick.RemoveAllListeners();
-            if (onClick != null) _primary.onClick.AddListener(() => onClick());
-            _primary.interactable = onClick != null;
+            if (id == _hub.Flow.CurrentGameId) Apply();
         }
+
+        /// <summary>Make the screen match what the controller says it should look like.</summary>
+        void Apply()
+        {
+            var m = _hub.Catalogue.ById(_hub.Flow.CurrentGameId);
+            if (m == null) return;
+
+            var p = GamePageController.Describe(m, _hub.Content);
+
+            _primaryLabel.text = p.PrimaryLabel;
+            _primary.interactable = p.PrimaryAction != PageAction.None;
+            _action = p.PrimaryAction;
+
+            _status.text = p.StatusLine;
+            _remove.gameObject.SetActive(p.CanFree);
+
+            _progressTrack.gameObject.SetActive(p.ShowProgress);
+            _progressFill.anchorMax = new Vector2(Mathf.Clamp01(p.Progress), 1f);
+
+            _pollProgress = p.ShowProgress;
+        }
+
+        void OnPrimaryClicked()
+        {
+            var m = _hub.Catalogue.ById(_hub.Flow.CurrentGameId);
+            if (m == null) return;
+
+            switch (_action)
+            {
+                case PageAction.Download:
+                case PageAction.Retry:
+                    _hub.Content.Download(m);
+                    break;
+
+                case PageAction.Play:
+                    Debug.Log($"[Hub] PLAY '{m.id}' — Feature 5 launches the game here.");
+                    break;
+            }
+        }
+
+        void OnRemoveClicked()
+        {
+            var m = _hub.Catalogue.ById(_hub.Flow.CurrentGameId);
+            if (m != null) _hub.Content.Free(m);
+        }
+
+        // ---- construction (runs once) --------------------------------------------------
 
         void BuildUi()
         {
@@ -119,28 +180,61 @@ namespace GameHub
             tagRt.offsetMax = new Vector2(-Margin, 0f);
             _tagline.alignment = TextAlignmentOptions.Top;
 
-            // Actions sit low: bottom third is where a thumb reaches on a phone.
+            BuildActions(cfg);
+        }
+
+        void BuildActions(HubConfig cfg)
+        {
+            float width = 1080f - 2f * Margin;
+
+            // Progress bar: a dark track with a fill whose right anchor IS the progress.
+            var track = HubUi.MakePanel("ProgressTrack", _canvas.transform,
+                                        new Color(0.10f, 0.14f, 0.26f, 1f));
+            _progressTrack = track.rectTransform;
+            _progressTrack.anchorMin = _progressTrack.anchorMax = new Vector2(0.5f, 0f);
+            _progressTrack.pivot = new Vector2(0.5f, 0f);
+            _progressTrack.sizeDelta = new Vector2(width, 16f);
+            _progressTrack.anchoredPosition = new Vector2(0f, 450f);
+            track.raycastTarget = false;
+
+            var fill = HubUi.MakePanel("ProgressFill", track.transform, cfg.themePrimary);
+            _progressFill = fill.rectTransform;
+            _progressFill.anchorMin = Vector2.zero;
+            _progressFill.anchorMax = new Vector2(0f, 1f);
+            _progressFill.offsetMin = Vector2.zero;
+            _progressFill.offsetMax = Vector2.zero;
+            fill.raycastTarget = false;
+            track.gameObject.SetActive(false);
+
+            _status = HubUi.MakeText("Status", _canvas.transform, cfg.font, 32f,
+                                     new Color(0.55f, 0.60f, 0.72f, 1f));
+            var statusRt = _status.rectTransform;
+            statusRt.anchorMin = statusRt.anchorMax = new Vector2(0.5f, 0f);
+            statusRt.pivot = new Vector2(0.5f, 0f);
+            statusRt.sizeDelta = new Vector2(width, 50f);
+            statusRt.anchoredPosition = new Vector2(0f, 390f);
+
             _primary = HubUi.MakeButton("Primary", _canvas.transform, cfg.themePrimary);
             var primaryRt = (RectTransform)_primary.transform;
             primaryRt.anchorMin = primaryRt.anchorMax = new Vector2(0.5f, 0f);
             primaryRt.pivot = new Vector2(0.5f, 0f);
-            primaryRt.sizeDelta = new Vector2(RectWidth(), 160f);
-            primaryRt.anchoredPosition = new Vector2(0f, 260f);
+            primaryRt.sizeDelta = new Vector2(width, 160f);
+            primaryRt.anchoredPosition = new Vector2(0f, 200f);
             _primaryLabel = HubUi.MakeText("Label", _primary.transform, cfg.font, 60f, cfg.themeBg);
             HubUi.Stretch(_primaryLabel.rectTransform);
+            _primary.onClick.AddListener(OnPrimaryClicked);
 
             _remove = HubUi.MakeButton("Remove", _canvas.transform, Color.clear);
             var removeRt = (RectTransform)_remove.transform;
             removeRt.anchorMin = removeRt.anchorMax = new Vector2(0.5f, 0f);
             removeRt.pivot = new Vector2(0.5f, 0f);
-            removeRt.sizeDelta = new Vector2(RectWidth(), 90f);
-            removeRt.anchoredPosition = new Vector2(0f, 140f);
+            removeRt.sizeDelta = new Vector2(width, 90f);
+            removeRt.anchoredPosition = new Vector2(0f, 90f);
             var removeLabel = HubUi.MakeText("Label", _remove.transform, cfg.font, 34f,
                                              new Color(0.55f, 0.60f, 0.72f, 1f));
             removeLabel.text = "Remove data";
             HubUi.Stretch(removeLabel.rectTransform);
+            _remove.onClick.AddListener(OnRemoveClicked);
         }
-
-        static float RectWidth() => 1080f - 2f * Margin;
     }
 }

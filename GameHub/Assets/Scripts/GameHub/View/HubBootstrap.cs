@@ -12,6 +12,13 @@ namespace GameHub
         [Tooltip("Leave empty to load 'HubConfig' from Resources. Set it to test an alternate config.")]
         [SerializeField] HubConfig config;
 
+        [Header("Content")]
+        [Tooltip("Simulated downloads. Turn off once AddressablesContentService exists.")]
+        [SerializeField] bool useFakeContent = true;
+
+        [Tooltip("Seconds a fake download takes.")]
+        [SerializeField] float fakeDownloadSeconds = 3f;
+
         [Header("Dev")]
         [Tooltip("Log the loaded catalogue on start. Editor convenience while there's no UI yet.")]
         [SerializeField] bool logCatalogue = true;
@@ -19,6 +26,7 @@ namespace GameHub
         public HubConfig Config => config;
         public GameCatalogue Catalogue { get; private set; }
         public HubFlow Flow { get; private set; }
+        public IContentService Content { get; private set; }
 
         void Awake()
         {
@@ -32,7 +40,14 @@ namespace GameHub
 
             Catalogue = new GameCatalogue(config.games);
             Flow = new HubFlow();
+
+            // The composition root picks the implementation; nothing else knows which one.
+            Content = new FakeContentService { downloadSeconds = fakeDownloadSeconds };
+            if (!useFakeContent)
+                Debug.LogWarning("HubBootstrap: real content service not built yet — using the fake.");
         }
+
+        void Update() => Content?.Tick(Time.deltaTime);
 
         void Start()
         {
