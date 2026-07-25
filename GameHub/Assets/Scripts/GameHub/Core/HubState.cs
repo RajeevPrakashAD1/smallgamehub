@@ -5,6 +5,12 @@ namespace GameHub
     /// <summary>Which screen the hub is on. One value at a time.</summary>
     public enum HubState { Boot, Home, GamePage, Loading, InGame }
 
+    /// <summary>A hub screen. The composition root hands it everything it needs.</summary>
+    public interface IHubView
+    {
+        void Init(HubBootstrap hub);
+    }
+
     /// <summary>
     /// The single source of truth for "what screen are we on". Transitions set the state
     /// and raise StateChanged; views react to that event (they never track state themselves).

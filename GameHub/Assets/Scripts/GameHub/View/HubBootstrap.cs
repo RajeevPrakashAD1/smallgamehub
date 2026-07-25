@@ -36,6 +36,11 @@ namespace GameHub
 
         void Start()
         {
+            // Push dependencies into the views before any transition fires: Awake order
+            // between components is undefined, Start-after-all-Awakes is not.
+            foreach (var view in GetComponentsInChildren<IHubView>(includeInactive: true))
+                view.Init(this);
+
             Flow.GoHome();
 
             if (!logCatalogue) return;
