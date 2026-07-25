@@ -1,0 +1,47 @@
+using UnityEngine;
+
+namespace GameHub
+{
+    /// <summary>
+    /// The composition root: the one object that constructs the hub's object graph.
+    /// Everything else receives what it needs and never looks anything up itself.
+    /// Lives on HubRoot in Hub.unity.
+    /// </summary>
+    public sealed class HubBootstrap : MonoBehaviour
+    {
+        [Tooltip("Leave empty to load 'HubConfig' from Resources. Set it to test an alternate config.")]
+        [SerializeField] HubConfig config;
+
+        [Header("Dev")]
+        [Tooltip("Log the loaded catalogue on start. Editor convenience while there's no UI yet.")]
+        [SerializeField] bool logCatalogue = true;
+
+        public HubConfig Config => config;
+        public GameCatalogue Catalogue { get; private set; }
+        public HubFlow Flow { get; private set; }
+
+        void Awake()
+        {
+            if (config == null) config = Resources.Load<HubConfig>("HubConfig");
+            if (config == null)
+            {
+                Debug.LogError("HubBootstrap: no HubConfig found at Resources/HubConfig — hub cannot start.");
+                enabled = false;
+                return;
+            }
+
+            Catalogue = new GameCatalogue(config.games);
+            Flow = new HubFlow();
+        }
+
+        void Start()
+        {
+            Flow.GoHome();
+
+            if (!logCatalogue) return;
+            Debug.Log($"[Hub] {config.appName}: {Catalogue.Games.Count} game(s), state={Flow.State}");
+            foreach (var g in Catalogue.Games)
+                Debug.Log($"[Hub]   • {g.id} — {g.title}");
+        }
+    }
+}
