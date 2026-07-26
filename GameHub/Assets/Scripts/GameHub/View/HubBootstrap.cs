@@ -19,6 +19,17 @@ namespace GameHub
         [Tooltip("Seconds a fake download takes.")]
         [SerializeField] float fakeDownloadSeconds = 3f;
 
+        [Header("Matchmaking")]
+        [Tooltip("Simulated matchmaking. Turn off once RelayMatchmaker exists (needs UGS).")]
+        [SerializeField] bool useFakeMatchmaking = true;
+
+        [Tooltip("Which ending the fake matchmaker plays out. Use Fail/NeverFind to test the UI.")]
+        [SerializeField] NetKit.FakeMatchmaker.Outcome fakeMatchOutcome =
+            NetKit.FakeMatchmaker.Outcome.SucceedAsHost;
+
+        [Tooltip("Seconds the fake spends searching before it finds someone.")]
+        [SerializeField] float fakeSearchSeconds = 2f;
+
         [Header("Dev")]
         [Tooltip("Log the loaded catalogue on start. Editor convenience while there's no UI yet.")]
         [SerializeField] bool logCatalogue = true;
@@ -27,6 +38,7 @@ namespace GameHub
         public GameCatalogue Catalogue { get; private set; }
         public HubFlow Flow { get; private set; }
         public IContentService Content { get; private set; }
+        public NetKit.IMatchmaker Matchmaker { get; private set; }
         public GameLauncher Launcher { get; private set; }
 
         void Awake()
@@ -46,9 +58,18 @@ namespace GameHub
             Content = new FakeContentService { downloadSeconds = fakeDownloadSeconds };
             if (!useFakeContent)
                 Debug.LogWarning("HubBootstrap: real content service not built yet — using the fake.");
+
+            Matchmaker = new NetKit.FakeMatchmaker(fakeMatchOutcome, fakeSearchSeconds);
+            if (!useFakeMatchmaking)
+                Debug.LogWarning("HubBootstrap: RelayMatchmaker not built yet — using the fake.");
         }
 
-        void Update() => Content?.Tick(Time.deltaTime);
+        void Update()
+        {
+            float dt = Time.deltaTime;
+            Content?.Tick(dt);
+            Matchmaker?.Tick(dt);
+        }
 
         void Start()
         {

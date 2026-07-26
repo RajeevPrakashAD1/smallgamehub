@@ -4,6 +4,7 @@
     "references": [
         "TrailTrap",
         "GameHub",
+        "NetKit",
         "Unity.Netcode.Runtime",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"

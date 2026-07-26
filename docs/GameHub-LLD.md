@@ -148,8 +148,10 @@ Goal: the hub launches a game generically and gets control back. Retire Trail Tr
 ## Feature 6 — Matchmaking + Trail Trap Lobby redesign  (HLD §8)  🔴
 
 Goal: multiplayer launch. This is its own milestone and also fixes Trail Trap's 3 deferred bugs
-(self-starting match, dead client-rematch, rematch streak) via the Lobby phase. Coarse for now;
-gets its own LLD detail before we build.
+(self-starting match, dead client-rematch, rematch streak) via the Lobby phase.
+
+> **Detailed plan: `GameHub-Matchmaking-LLD.md`** (Steps 6.1–6.10). The summary below is the
+> coarse version; build from that doc.
 
 - **Step 6.1** design: add `Lobby` to Trail Trap's `Phase`; match waits until both seats filled;
   `Configure()` auto-start seam kept so tests stay green.

@@ -30,6 +30,11 @@ namespace NetKit
         public static bool StartClient()
             => Nm != null && (Nm.IsListening ? !Nm.IsServer : (Hook() && Nm.StartClient()));
 
+        /// <summary>Open the session a matchmaker resolved. Games call this from their entry
+        /// point, once their own scene (and its NetworkManager) is loaded.</summary>
+        public static bool StartAs(MatchRole role)
+            => role == MatchRole.Host ? StartHost() : StartClient();
+
         public static void Shutdown() { if (IsRunning) Nm.Shutdown(); }
 
         // Re-subscribe defensively (-= then +=) so calling Start* twice can't double-fire events.

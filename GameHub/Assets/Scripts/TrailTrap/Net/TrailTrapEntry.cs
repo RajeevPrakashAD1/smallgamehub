@@ -15,13 +15,19 @@ namespace TrailTrap
 
         GameObject _homeButton;
 
+        // The scene's own EventSystem is authored inactive so it can't collide with the
+        // hub's during an additive load. Standalone (no hub) there is none, so make one.
+        void Awake() => HubUi.EnsureEventSystem();
+
         protected override void OnLaunch()
         {
             // The hub owns session start now — the dev menu would offer a second one.
             if (devMenu != null) devMenu.enabled = false;
 
+            // The hub resolved the match but could not open the session — the NetworkManager
+            // lives in this scene, which did not exist yet. We own that half.
             if (Context.Mode == GameMode.Multiplayer && !NetKit.Session.IsRunning)
-                NetKit.Session.StartHost();
+                NetKit.Session.StartAs(Context.Role);
 
             BuildHomeButton();
         }

@@ -294,6 +294,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e560176b421943cbaa1620b5c1936355, type: 3}
   m_Name:
   m_EditorClassIdentifier:
+--- !u!114 &1000025
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1000020}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c4e1a92b3d84f6e9a5c0d2f8b1e63a7, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
 --- !u!1 &1000020
 GameObject:
   m_ObjectHideFlags: 0
@@ -306,6 +318,7 @@ GameObject:
   - component: {fileID: 1000022}
   - component: {fileID: 1000023}
   - component: {fileID: 1000024}
+  - component: {fileID: 1000025}
   m_Layer: 0
   m_Name: HubRoot
   m_TagString: Untagged

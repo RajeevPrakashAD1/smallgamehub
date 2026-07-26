@@ -63,6 +63,23 @@ namespace GameHub.Tests
         }
 
         [Test]
+        public void PlayOnline_OnlyWhenInstalledAndTheGameSupportsIt()
+        {
+            _game.supportsMultiplayer = true;
+
+            _content.Refresh(_game);
+            Assert.IsFalse(GamePageController.Describe(_game, _content).ShowPlayOnline,
+                "can't matchmake for a game that isn't installed yet");
+
+            _content.Download(_game);
+            _content.Tick(5f);
+            Assert.IsTrue(GamePageController.Describe(_game, _content).ShowPlayOnline);
+
+            _game.supportsMultiplayer = false;
+            Assert.IsFalse(GamePageController.Describe(_game, _content).ShowPlayOnline);
+        }
+
+        [Test]
         public void FailedDownload_OffersRetry()
         {
             _content.Refresh(_game);

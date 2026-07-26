@@ -21,3 +21,4 @@ MonoBehaviour:
   minHubVersion: 1.0.0
   supportsSolo: 1
   supportsMultiplayer: 1
+  playersPerMatch: 2

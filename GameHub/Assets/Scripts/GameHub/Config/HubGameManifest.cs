@@ -40,5 +40,9 @@ namespace GameHub
 
         [Tooltip("Does this game use online matchmaking?")]
         public bool supportsMultiplayer = false;
+
+        [Tooltip("Seats in one online match. The hub matchmakes to this number — it never " +
+                 "asks the game, which is how a new game gets matchmaking for free.")]
+        [Min(2)] public int playersPerMatch = 2;
     }
 }

@@ -15,8 +15,12 @@ namespace GameHub
         public readonly bool CanFree;
         public readonly string StatusLine;
 
+        /// <summary>Offer the online match button — installed and the game supports it.</summary>
+        public readonly bool ShowPlayOnline;
+
         public PagePresentation(string primaryLabel, PageAction primaryAction,
-                                bool showProgress, float progress, bool canFree, string statusLine)
+                                bool showProgress, float progress, bool canFree, string statusLine,
+                                bool showPlayOnline = false)
         {
             PrimaryLabel = primaryLabel;
             PrimaryAction = primaryAction;
@@ -24,6 +28,7 @@ namespace GameHub
             Progress = progress;
             CanFree = canFree;
             StatusLine = statusLine;
+            ShowPlayOnline = showPlayOnline;
         }
     }
 
@@ -42,7 +47,8 @@ namespace GameHub
             {
                 case ContentState.Ready:
                     return new PagePresentation("PLAY", PageAction.Play,
-                                                false, 0f, true, "Installed");
+                                                false, 0f, true, "Installed",
+                                                showPlayOnline: game.supportsMultiplayer);
 
                 case ContentState.Downloading:
                     float p = content.Progress(game);

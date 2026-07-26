@@ -21,6 +21,7 @@ namespace GameHub
         TMP_Text _status;
         Button _primary;
         TMP_Text _primaryLabel;
+        Button _playOnline;
         Button _remove;
         RectTransform _progressTrack;
         RectTransform _progressFill;
@@ -100,6 +101,7 @@ namespace GameHub
             _action = p.PrimaryAction;
 
             _status.text = p.StatusLine;
+            _playOnline.gameObject.SetActive(p.ShowPlayOnline);
             _remove.gameObject.SetActive(p.CanFree);
 
             _progressTrack.gameObject.SetActive(p.ShowProgress);
@@ -124,6 +126,12 @@ namespace GameHub
                     _hub.Launcher.Launch(m, GameMode.Solo);
                     break;
             }
+        }
+
+        void OnPlayOnlineClicked()
+        {
+            var m = _hub.Catalogue.ById(_hub.Flow.CurrentGameId);
+            if (m != null) _hub.Launcher.Launch(m, GameMode.Multiplayer);
         }
 
         void OnRemoveClicked()
@@ -174,7 +182,7 @@ namespace GameHub
             _tagline = HubUi.MakeText("Tagline", _canvas.transform, cfg.font, 38f,
                                       new Color(0.66f, 0.72f, 0.85f, 1f));
             var tagRt = _tagline.rectTransform;
-            tagRt.anchorMin = new Vector2(0f, 0.30f);
+            tagRt.anchorMin = new Vector2(0f, 0.34f);
             tagRt.anchorMax = new Vector2(1f, 0.42f);
             tagRt.offsetMin = new Vector2(Margin, 0f);
             tagRt.offsetMax = new Vector2(-Margin, 0f);
@@ -194,7 +202,7 @@ namespace GameHub
             _progressTrack.anchorMin = _progressTrack.anchorMax = new Vector2(0.5f, 0f);
             _progressTrack.pivot = new Vector2(0.5f, 0f);
             _progressTrack.sizeDelta = new Vector2(width, 16f);
-            _progressTrack.anchoredPosition = new Vector2(0f, 450f);
+            _progressTrack.anchoredPosition = new Vector2(0f, 600f);
             track.raycastTarget = false;
 
             var fill = HubUi.MakePanel("ProgressFill", track.transform, cfg.themePrimary);
@@ -212,17 +220,32 @@ namespace GameHub
             statusRt.anchorMin = statusRt.anchorMax = new Vector2(0.5f, 0f);
             statusRt.pivot = new Vector2(0.5f, 0f);
             statusRt.sizeDelta = new Vector2(width, 50f);
-            statusRt.anchoredPosition = new Vector2(0f, 390f);
+            statusRt.anchoredPosition = new Vector2(0f, 540f);
 
             _primary = HubUi.MakeButton("Primary", _canvas.transform, cfg.themePrimary);
             var primaryRt = (RectTransform)_primary.transform;
             primaryRt.anchorMin = primaryRt.anchorMax = new Vector2(0.5f, 0f);
             primaryRt.pivot = new Vector2(0.5f, 0f);
             primaryRt.sizeDelta = new Vector2(width, 160f);
-            primaryRt.anchoredPosition = new Vector2(0f, 200f);
+            primaryRt.anchoredPosition = new Vector2(0f, 350f);
             _primaryLabel = HubUi.MakeText("Label", _primary.transform, cfg.font, 60f, cfg.themeBg);
             HubUi.Stretch(_primaryLabel.rectTransform);
             _primary.onClick.AddListener(OnPrimaryClicked);
+
+            // Secondary styling (dark fill, themed text) so PLAY stays the obvious default.
+            _playOnline = HubUi.MakeButton("PlayOnline", _canvas.transform,
+                                           new Color(0.10f, 0.14f, 0.26f, 1f));
+            var onlineRt = (RectTransform)_playOnline.transform;
+            onlineRt.anchorMin = onlineRt.anchorMax = new Vector2(0.5f, 0f);
+            onlineRt.pivot = new Vector2(0.5f, 0f);
+            onlineRt.sizeDelta = new Vector2(width, 130f);
+            onlineRt.anchoredPosition = new Vector2(0f, 200f);
+            var onlineLabel = HubUi.MakeText("Label", _playOnline.transform, cfg.font, 46f,
+                                             cfg.themePrimary);
+            onlineLabel.text = "PLAY ONLINE";
+            HubUi.Stretch(onlineLabel.rectTransform);
+            _playOnline.onClick.AddListener(OnPlayOnlineClicked);
+            _playOnline.gameObject.SetActive(false);
 
             _remove = HubUi.MakeButton("Remove", _canvas.transform, Color.clear);
             var removeRt = (RectTransform)_remove.transform;
